@@ -1,0 +1,580 @@
+# -*- coding: utf-8 -*-
+
+import json
+from datetime import date, timedelta, datetime
+from dateutil import tz
+import praw
+import requests
+
+def getUrlContent2(url):
+    headers = {'user-agent': (
+        'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'),
+        'Dnt': '1',
+        'Accept-Encoding': 'gzip, deflate, sdch',
+        'Accept-Language': 'en',
+        'origin': 'http://stats.nba.com'}
+    response = requests.get(url, headers=headers)
+    return json.loads(response.text)
+
+def timeStringToPacific(s):
+    from_zone = tz.gettz('America/New_York')
+    to_zone = tz.gettz('America/Los_Angeles')
+    time = datetime.strptime(s[:-3], '%I:%M %p')
+    newyork = time.replace(tzinfo=from_zone)
+    pacific = newyork.astimezone(to_zone)
+    formatted = datetime.strftime(pacific, '%I:%M %p')
+    if formatted[0] == '0':
+        formatted = formatted[1:]
+    return formatted
+
+# ------SIDEBAR PHOTOS, LINKS, & RULES-------
+sidebarText = '\n1. [](https://www.reddit.com/r/warriors/#1)'
+sidebarText += '\n2. [](https://www.reddit.com/r/warriors/#2)'
+sidebarText += '\n3. [](https://www.reddit.com/r/warriors/#3)'
+sidebarText += '\n4. [](https://www.reddit.com/r/warriors/#4)'
+
+sidebarText += '\n\n*For all us Golden State Warriors fans sticking with them through thick and thin.*'
+
+sidebarText += '\n\n-----------------------------------------'
+
+sidebarText += '\n\n[**@GSWReddit**](https://twitter.com/GSWReddit)&nbsp;[](https://discord.gg/rva4yPe)'
+
+sidebarText += '\n\n####[Subreddit Rules ▾ *0. All posts must be relevant to the Warriors.**1. All links to Reddit posts outside of /r/warriors need to be in no-participation mode (https://np.reddit.com).**2. If you want to make a "meta" post, you need to message modmail first asking for permission. "Meta" is defined as about the subreddit or its members.**3. Upvote Parties, a.k.a "Arrow Fiestas," are not allowed. The mods will post them occasionally, so look out for them!**4. Do not vote if you are not subscribed.**5. Be civil. Regardless of the scenario, all posts and comments are subject to removal. Personal attacks, trolling, and bigotry will result in bans. Do not be a dick and use your better judgment.**5a. Visiting the subreddit of another team to troll or antagonize them will result in a ban from /r/warriors. Be civil and use your better judgment just as you would here.**5b. Do not link to or post screenshots of other subreddits for the sole purpose of brigading, vote manipulation, or to attack their fan base or specific users.**5c. Posting about bans obtained from other subreddits will result in a ban here as well.**6. No personal information. Posting or seeking any identifying personal information will result in a ban without a prior warning. This includes for yourself or other people (non-public figures, and refers to, but is not limited to, names, phone numbers, email addresses, FaceBook, or other social media accounts. Again, we will not hesitate to enforce this rule. This rule protects both the OP (original poster) and the /r/warriors community from any harm. No exceptions will be made.**7. Any post that exists solely to congratulate the Warriors originating from a fan of another team will be removed at the discretion of the moderation team.**8. Moderators reserve the right to remove content or restrict posting privileges of users as necessary if it is deemed detrimental to the subreddit or to the experience of others.**9. Here at /r/warriors we do not endorse the selling and purchasing of tickets to Warriors games. Any ticket sales, purchases, or exchanges etc. are done completely at the risk of the buyer and seller.**10. Posts with clickbait or sensationalized titles will be removed and repeat offenses will be subject to ban. Clickbait titles are defined as titles whose main purpose is to attract attention and encourage visitors to click on a link to a particular web page, that are either an exaggeration of the specific piece/quote or have nothing to do with it entirely.**11. No self promotion for non-contributors. This applies to podcasts, videos, blog posts, & etc. Any user who wants to self promote must have a reasonable post and comment history in this subreddit that is not related to whatever the user is trying to promote. ~~Playoff Rules~~**12. No appreciation threads, unless they contribute in some way to the discussion via analysis, memes, etc.*](#rulesDropdown)'
+
+# ------DUNK CONTEST-------
+sidebarText += '\n\n| **2017-18 KLAY VS. ZAZA DUNK-OFF COUNTER**|'
+sidebarText += '\n:--:|:--:'
+
+sidebarText += '\n\nKlay Thompson | Zaza Pachulia'
+sidebarText += '\n:--:|:--:'
+sidebarText += '\n**5**|**5**'
+
+print('Please wait, the script may take a while to run')
+recordUrl = "http://stats.nba.com/stats/playoffpicture?LeagueID=00&SeasonID=22017"
+recordData = getUrlContent2(recordUrl)
+print('Got record')
+
+# ------STANDINGS-------
+warriorsID = 1610612744
+westStandings = recordData["resultSets"][3]["rowSet"]
+for i in range(0, 15):
+    if westStandings[i][3] == warriorsID:
+        warriorsRecord = str(westStandings[i][4]) + '-' + str(westStandings[i][5])
+
+teamSubs = {'1610612742': 'DAL',
+            '1610612743': 'DEN',
+            '1610612744': 'GSW',
+            '1610612745': 'HOU',
+            '1610612746': 'LAC',
+            '1610612747': 'LAL',
+            '1610612763': 'MEM',
+            '1610612750': 'MIN',
+            '1610612740': 'NOP',
+            '1610612760': 'OKC',
+            '1610612756': 'PHX',
+            '1610612757': 'POR',
+            '1610612758': 'SAC',
+            '1610612759': 'SAS',
+            '1610612762': 'UTA',
+            '1610612737': 'ATL',
+            '1610612738': 'BOS',
+            '1610612751': 'BKN',
+            '1610612766': 'CHA',
+            '1610612741': 'CHI',
+            '1610612739': 'CLE',
+            '1610612765': 'DET',
+            '1610612754': 'IND',
+            '1610612748': 'MIA',
+            '1610612749': 'MIL',
+            '1610612752': 'NYK',
+            '1610612753': 'ORL',
+            '1610612755': 'PHI',
+            '1610612761': 'TOR',
+            '1610612764': 'WAS'}
+
+sidebarText += '\n\n|**2017-18 WESTERN CONFERENCE STANDINGS**|'
+sidebarText += '\n:--:|:--:'
+
+sidebarText += '\n\nPos|Team|W|L|GB'
+sidebarText += '\n:--:|:--:|:--:|:--:|:--:'
+
+posList = [None] * 15
+teamList = [None] * 15
+WList = [None] * 15
+LList = [None] * 15
+GBList = [None] * 15
+
+westStandings = recordData["resultSets"][3]["rowSet"]
+for i in range(0, 15):
+    posList[i] = str(westStandings[i][1])
+    teamList[i] = '[](/' + teamSubs[str(westStandings[i][3])] + ')'
+    WList[i] = str(westStandings[i][4])
+    LList[i] = str(westStandings[i][5])    
+    GBList[i] = str(westStandings[i][11])
+# End for
+
+# Future Games
+for i in range(0, 15):
+    sidebarText += ('\n' + posList[i] + ' | ' + teamList[i] +  ' | ' + WList[i] + ' | ' + LList[i] + ' | ' + GBList[i])
+
+# ------SCHEDULE-------
+def formatDate(date):
+    return str(date.month) + '%2F' + str(date.day) + '%2F' + str(date.year)
+
+sidebarText += '\n\n|**2017-18 NBA REGULAR SEASON SCHEDULE**|'
+sidebarText += '\n:--:|:--:'
+
+sidebarText += '\n\nDate|Opp.|Time (PST)| TV'
+sidebarText += '\n:--:|:--:|:--:|:--:|:--:'
+today = date.today()
+
+gameList = [None] * 20
+dateList = [None] * 20
+oppositionList = [None] * 20
+WLTimeList = [None] * 20
+recordTV = [None] * 20
+
+pastGames = 0
+cont = 1
+while pastGames < 10:
+    newDate = today - timedelta(days=cont)
+    date = formatDate(newDate)
+    url = "http://stats.nba.com/stats/scoreboardV2?DayOffset=0&LeagueID=00&gameDate=" + date
+    data = getUrlContent2(url)
+    rowSet = data["resultSets"][0]["rowSet"]
+    for i in range(0, len(rowSet)):
+        if rowSet[i][6] == warriorsID or rowSet[i][7] == warriorsID:
+            if pastGames == 0:
+                dateList[9] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[9] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[9] = str(scoreSet[i * 2][7])
+                        oppositionList[9] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[9] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[9] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[9] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[9] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[9] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[9] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[9] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[9] = str(scoreSet[i * 2][7])
+                        oppositionList[9] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 1:
+                dateList[8] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[8] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[8] = str(scoreSet[i * 2][7])
+                        oppositionList[8] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[8] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[8] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[8] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[8] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[8] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[8] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[8] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[8] = str(scoreSet[i * 2][7])
+                        oppositionList[8] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 2:
+                dateList[7] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[7] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[7] = str(scoreSet[i * 2][7])
+                        oppositionList[7] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[7] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[7] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[7] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[7] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[7] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[7] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[7] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[7] = str(scoreSet[i * 2][7])
+                        oppositionList[7] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 3:
+                dateList[6] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[6] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[6] = str(scoreSet[i * 2][7])
+                        oppositionList[6] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[6] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[6] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[6] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[6] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[6] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[6] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[6] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[6] = str(scoreSet[i * 2][7])
+                        oppositionList[6] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 4:
+                dateList[5] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[5] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[5] = str(scoreSet[i * 2][7])
+                        oppositionList[5] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[5] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[5] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[5] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[5] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[5] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[5] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[5] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[5] = str(scoreSet[i * 2][7])
+                        oppositionList[5] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 5:
+                dateList[4] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[4] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[4] = str(scoreSet[i * 2][7])
+                        oppositionList[4] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[4] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[4] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[4] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[4] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[4] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[4] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[4] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[4] = str(scoreSet[i * 2][7])
+                        oppositionList[4] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            if pastGames == 6:
+                dateList[3] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[3] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'                
+                        recordTV[3] = str(scoreSet[i * 2][7])
+                        oppositionList[3] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[3] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[3] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[3] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[3] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[3] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[3] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[3] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[3] = str(scoreSet[i * 2][7])
+                        oppositionList[3] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            elif pastGames == 7:
+                dateList[2] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[2] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'
+                        recordTV[2] = str(scoreSet[i * 2][7])
+                        oppositionList[2] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[2] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[2] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[2] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[2] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[2] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[2] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[2] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[2] = str(scoreSet[i * 2][7])
+                        oppositionList[2] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'                        
+            elif pastGames == 8:
+                dateList[1] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[1] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'
+                        recordTV[1] = str(scoreSet[i * 2][7])
+                        oppositionList[1] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[1] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[1] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[1] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[1] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[1] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[1] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[1] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[1] = str(scoreSet[i * 2][7])
+                        oppositionList[1] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            elif pastGames == 9:
+                dateList[0] = str(newDate.month) + '/' + str(newDate.day)
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                    if rowSet[i][7] == warriorsID:
+                        WLTimeList[0] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'
+                        recordTV[0] = str(scoreSet[i * 2][7])
+                        oppositionList[0] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                    else:
+                        WLTimeList[0] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                        recordTV[0] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[0] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                else:
+                    if rowSet[i][6] == warriorsID:
+                        WLTimeList[0] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                        recordTV[0] = str(scoreSet[i * 2 + 1][7])
+                        oppositionList[0] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        WLTimeList[0] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                        recordTV[0] = str(scoreSet[i * 2][7])
+                        oppositionList[0] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            # End if
+            pastGames += 1
+            # End if
+    # End for
+    cont += 1
+# End while
+
+print('Got past games')
+
+futureGames = 0
+cont = 0
+while futureGames < 10:
+    newDate = today + timedelta(days=cont)
+    date = formatDate(newDate)
+    url = "http://stats.nba.com/stats/scoreboardV2?DayOffset=0&LeagueID=00&gameDate=" + date
+    data = getUrlContent2(url)
+    rowSet = data["resultSets"][0]["rowSet"]
+    for i in range(0, len(rowSet)):
+        if rowSet[i][6] == warriorsID or rowSet[i][7] == warriorsID:
+            if (cont == 0):
+                scoreSet = data["resultSets"][1]["rowSet"]
+                if scoreSet[i * 2][21] == None:
+                    if rowSet[i][7] == warriorsID:
+                        oppositionList[10 + futureGames] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                        WLTimeList[10 + futureGames] = timeStringToPacific(rowSet[i][4])
+                        if rowSet[i][12] or rowSet[i][13] == 'NBCSBA':                      
+                            if rowSet[i][11] == 'ESPN':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ESPN)'
+                            elif rowSet[i][11] == 'TNT':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//TNT)'                          
+                            elif rowSet[i][11] == 'ABC':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ABC)'                          
+                            elif rowSet[i][11] == 'NBA TV':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//NBATV)'
+                            else:
+                                recordTV[10 + futureGames] = '[](//NBCSBA)'                            
+                        else:                      
+                            if rowSet[i][11] == 'ESPN':
+                                recordTV[10 + futureGames] = '[](//ESPN)'
+                            elif rowSet[i][11] == 'TNT': 
+                                recordTV[10 + futureGames] = '[](//TNT)'                          
+                            elif rowSet[i][11] == 'ABC':
+                                recordTV[10 + futureGames] = '[](//ABC)'                          
+                            elif rowSet[i][11] == 'NBA TV':
+                                recordTV[10 + futureGames] = '[](//NBATV)'
+                            else:
+                                recordTV[10 + futureGames] = ''                                                    
+                    else:
+                        oppositionList[10 + futureGames] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                        WLTimeList[10 + futureGames] = timeStringToPacific(rowSet[i][4])
+                        if rowSet[i][12] or rowSet[i][13] == 'NBCSBA':                      
+                            if rowSet[i][11] == 'ESPN':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ESPN)'
+                            elif rowSet[i][11] == 'TNT':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//TNT)'                          
+                            elif rowSet[i][11] == 'ABC':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ABC)'                          
+                            elif rowSet[i][11] == 'NBA TV':
+                                recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//NBATV)'
+                            else:
+                                recordTV[10 + futureGames] = '[](//NBCSBA)'                            
+                        else:                      
+                            if rowSet[i][11] == 'ESPN':
+                                recordTV[10 + futureGames] = '[](//ESPN)'
+                            elif rowSet[i][11] == 'TNT': 
+                                recordTV[10 + futureGames] = '[](//TNT)'                          
+                            elif rowSet[i][11] == 'ABC':
+                                recordTV[10 + futureGames] = '[](//ABC)'                          
+                            elif rowSet[i][11] == 'NBA TV':
+                                recordTV[10 + futureGames] = '[](//NBATV)'
+                            else:
+                                recordTV[10 + futureGames] = ''      
+                else:
+                    if scoreSet[i * 2][22] > scoreSet[i * 2 + 1][22]:
+                        if rowSet[i][7] == warriorsID:
+                            WLTimeList[10 + futureGames] = '**W ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22]) + '**'
+                            recordTV[10 + futureGames] = str(scoreSet[i * 2][7])
+                            oppositionList[10 + futureGames] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+                        else:
+                            WLTimeList[10 + futureGames] = 'L ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22])
+                            recordTV[10 + futureGames] = str(scoreSet[i * 2 + 1][7])
+                            oppositionList[10 + futureGames] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                    else:
+                        if rowSet[i][6] == warriorsID:
+                            WLTimeList[10 + futureGames] = '**W ' + str(scoreSet[i * 2 + 1][22]) + '-' + str(scoreSet[i * 2][22]) + '**' 
+                            recordTV[10 + futureGames] = str(scoreSet[i * 2 + 1][7])
+                            oppositionList[10 + futureGames] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'
+                        else:
+                            WLTimeList[10 + futureGames] = 'L ' + str(scoreSet[i * 2][22]) + '-' + str(scoreSet[i * 2 + 1][22])
+                            recordTV[10 + futureGames] = str(scoreSet[i * 2][7])
+                            oppositionList[10 + futureGames] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'
+            else:
+                if rowSet[i][7] == warriorsID:
+                    oppositionList[10 + futureGames] = '@[](/' + teamSubs[str(rowSet[i][6])] + ')'                
+                    WLTimeList[10 + futureGames] = timeStringToPacific(rowSet[i][4])
+                    if rowSet[i][12] or rowSet[i][13] == 'NBCSBA':                      
+                        if rowSet[i][11] == 'ESPN':
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ESPN)'
+                        elif rowSet[i][11] == 'TNT': 
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//TNT)'                          
+                        elif rowSet[i][11] == 'ABC':
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//ABC)'                          
+                        elif rowSet[i][11] == 'NBA TV':
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//NBATV)'
+                        else:
+                            recordTV[10 + futureGames] = '[](//NBCSBA)'                           
+                    else:                      
+                        if rowSet[i][11] == 'ESPN':
+                            recordTV[10 + futureGames] = '[](//ESPN)'
+                        elif rowSet[i][11] == 'TNT': 
+                            recordTV[10 + futureGames] = '[](//TNT)'                          
+                        elif rowSet[i][11] == 'ABC':
+                            recordTV[10 + futureGames] = '[](//ABC)'                          
+                        elif rowSet[i][11] == 'NBA TV':
+                            recordTV[10 + futureGames] = '[](//NBATV)'
+                        else:
+                            recordTV[10 + futureGames] = ''
+                elif rowSet[i][6] == warriorsID:
+                    oppositionList[10 + futureGames] = '&nbsp;&nbsp; [](/' + teamSubs[str(rowSet[i][7])] + ')'               
+                    WLTimeList[10 + futureGames] = timeStringToPacific(rowSet[i][4])
+                    if rowSet[i][12] or rowSet[i][13] == 'NBCSBA':                      
+                        if rowSet[i][11] == 'ESPN':
+                            recordTV[10 + futureGames] = '[](//NBCSBA[](//slash) [](//ESPN)'
+                        elif rowSet[i][11] == 'TNT': 
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//TNT)'                          
+                        elif rowSet[i][11] == 'ABC':
+                            recordTV[10 + futureGames] = '[](//NBCSBA[](//slash) [](//ABC)'                          
+                        elif rowSet[i][11] == 'NBA TV':
+                            recordTV[10 + futureGames] = '[](//NBCSBA)[](//slash) [](//NBATV)'
+                        else:
+                            recordTV[10 + futureGames] = '[](//NBCSBA)'                           
+                    else:                      
+                        if rowSet[i][11] == 'ESPN':
+                            recordTV[10 + futureGames] = '[](//ESPN)'
+                        elif rowSet[i][11] == 'TNT': 
+                            recordTV[10 + futureGames] = '[](//TNT)'                          
+                        elif rowSet[i][11] == 'ABC':
+                            recordTV[10 + futureGames] = '[](//ABC)'                          
+                        elif rowSet[i][11] == 'NBA TV':
+                            recordTV[10 + futureGames] = '[](//NBATV)'
+                        else:
+                            recordTV[10 + futureGames] = ''                              
+            # End if          
+            dateList[10 + futureGames] = str(newDate.month) + '/' + str(newDate.day)
+            futureGames += 1
+            # End if
+    # End for
+    cont += 1
+# End while
+
+print('Got future games')
+
+# Previous Games
+sidebarText += ('\n' + dateList[0] + ' | ' + oppositionList[0] +  ' | ' + WLTimeList[0] + ' | ' + recordTV[0])
+sidebarText += ('\n' + dateList[1] + ' | ' + oppositionList[1] +  ' | ' + WLTimeList[1] + ' | ' + recordTV[1])
+sidebarText += ('\n' + dateList[2] + ' | ' + oppositionList[2] +  ' | ' + WLTimeList[2] + ' | ' + recordTV[2])
+sidebarText += ('\n' + dateList[3] + ' | ' + oppositionList[3] +  ' | ' + WLTimeList[3] + ' | ' + recordTV[3])
+sidebarText += ('\n' + dateList[4] + ' | ' + oppositionList[4] +  ' | ' + WLTimeList[4] + ' | ' + recordTV[4])
+sidebarText += ('\n' + dateList[5] + ' | ' + oppositionList[5] +  ' | ' + WLTimeList[5] + ' | ' + recordTV[5])
+sidebarText += ('\n' + dateList[6] + ' | ' + oppositionList[6] +  ' | ' + WLTimeList[6] + ' | ' + recordTV[6])
+sidebarText += ('\n' + dateList[7] + ' | ' + oppositionList[7] +  ' | ' + WLTimeList[7] + ' | ' + recordTV[7])
+sidebarText += ('\n' + dateList[8] + ' | ' + oppositionList[8] +  ' | ' + WLTimeList[8] + ' | ' + recordTV[8])
+sidebarText += ('\n' + dateList[9] + ' | ' + oppositionList[9] +  ' | ' + WLTimeList[9] + ' | ' + recordTV[9])
+
+# Future Games
+for i in range(10, 20):
+    sidebarText += ('\n' + dateList[i] + ' | ' + oppositionList[i] +  ' | ' + WLTimeList[i] + ' | ' + recordTV[i])
+
+sidebarText += '\n\n&nbsp;'
+
+sidebarText += '\n\n|**2017-18 WARRIORS ROSTER**|'
+sidebarText += '\n:--:|:--:'
+
+sidebarText += '\n\n\#|Name|Pos.|Exp.'
+sidebarText += '\n:---:|:---:|:---:|:---:'
+sidebarText += '\n0|Patrick McCaw|G|1 Year'
+sidebarText += '\n1|Javale McGee|C|9 Years'
+sidebarText += '\n2|Jordan Bell|F|Rookie'
+sidebarText += '\n3|David West|C|14 Years'
+sidebarText += '\n4|Quinn Cook|G|1 Year'
+sidebarText += '\n5|Kevon Looney|F|2 Years'
+sidebarText += '\n6|Nick Young|G|11 Years'
+sidebarText += '\n9|Andre Iguodala|F|13 Years'
+sidebarText += '\n11|Klay Thompson|G|6 Years'
+sidebarText += '\n15|Damian Jones|C|1 Year'
+sidebarText += '\n18|Omri Casspi|F|8 Years'
+sidebarText += '\n23|Draymond Green|DPOY|5 Years'
+sidebarText += '\n25|Chris Boucher|C|Rookie'
+sidebarText += '\n27|Zaza Pachulia|C|14 Years'
+sidebarText += '\n30|Stephen Curry|G|8 Years'
+sidebarText += '\n34|Shaun Livingston|G|12 Years'
+sidebarText += '\n35|Kevin Durant|FMVP|10 Years'
+
+sidebarText += '\n\n###**Official Warriors Links**'
+sidebarText += '\n[](http://www.nba.com/warriors/)' 
+sidebarText += '\n[](https://www.facebook.com/warriors)' 
+sidebarText += '\n[](https://twitter.com/warriors)' 
+sidebarText += '\n[](https://www.youtube.com/user/GoldenStateWarriors/videos)' 
+sidebarText += '\n[](https://soundcloud.com/warriors)' 
+sidebarText += '\n[](http://www.nba.com/gamenotes//warriors.pdf)'
+
+sidebarText += '\n\n---'
+
+sidebarText += '\n\n###**Related Subreddits**'
+sidebarText += '\n[](https://49ers.reddit.com)'
+sidebarText += '\n[](https://oaklandraiders.reddit.com)'
+sidebarText += '\n[](https://SanJoseSharks.reddit.com)'
+sidebarText += '\n[](https://SFGiants.reddit.com)'
+sidebarText += '\n[](https://OaklandAthletics.reddit.com)'
+sidebarText += '\n[](https://SJEarthquakes.reddit.com)'
+
+sidebarText += '\n\n###### *[1947ChampionshipBanner](https://en.wikipedia.org/wiki/Golden_State_Warriors#Franchise_history)[1956ChampionshipBanner](https://en.wikipedia.org/wiki/Golden_State_Warriors#Franchise_history)[2075ChampionshipBanner](https://en.wikipedia.org/wiki/Golden_State_Warriors#Franchise_history)[2015ChampionshipBanner](https://en.wikipedia.org/wiki/2014–15_Golden_State_Warriors_season)[2017ChampionshipBanner](https://en.wikipedia.org/wiki/2016–17_Golden_State_Warriors_season)**'
+
+sidebarText += '\n\n[](https://www.instagram.com/p/BVnBpAIB4_t/)'
+
+# Post sidebar text to subreddit
+print('Reddit Crendentials (Must be moderator of subreddit)')
+subreddit = 'subreddit'
+print('Wait until you see "Done!", ignore warnings')
+r = praw.Reddit(user_agent='user_agent', client_id='client_id',
+                client_secret='client_secret', password='password', username='username')
+print("Updating sidebar...")
+r.subreddit(subreddit).mod.update(description=sidebarText)
+print('\nDone!')
